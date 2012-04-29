@@ -1,0 +1,8 @@
+#!/bin/sh
+
+dlogutil -b radio -v time -f /var/log/seq.radio.log -r 1000 -n 10 &
+
+if [ ! -e /opt/etc/.hib_capturing ]; then
+/usr/bin/telephony-daemon &
+fi
+
