@@ -195,7 +195,9 @@ int main(int argc, char *argv[])
 	dbg("flag[test_load]: %d", flag_test_load);
 
 	g_type_init();
+#if !GLIB_CHECK_VERSION (2, 31, 0)
 	g_thread_init(NULL);
+#endif
 
 	s = tcore_server_new();
 	if (!s) {

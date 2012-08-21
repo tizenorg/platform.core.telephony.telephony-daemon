@@ -1,6 +1,6 @@
 Name:       telephony-daemon
 Summary:    Telephony daemon
-Version:    0.1.3
+Version:    0.1.6
 Release:    1
 Group:      System/Telephony
 License:    Apache
@@ -25,6 +25,7 @@ make %{?jobs:-j%jobs}
 %make_install
 
 %files
+%manifest telephony-daemon.manifest
 %defattr(-,root,root,-)
 %{_bindir}/telephony-daemon
 %{_initrddir}/telephony-daemon

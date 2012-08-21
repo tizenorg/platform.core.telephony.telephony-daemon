@@ -35,6 +35,8 @@
 #include <server.h>
 #include <hal.h>
 #include <queue.h>
+#include <storage.h>
+#include <communicator.h>
 
 #include "monitor.h"
 
@@ -67,13 +69,6 @@ static void _monitor_plugin(Server *s)
 			free(str);
 
 		msg(" - addr: %p", p);
-		msg(" - ref_hal: %p", tcore_plugin_ref_hal(p));
-		if (tcore_plugin_ref_hal(p)) {
-			str = tcore_hal_get_name(tcore_plugin_ref_hal(p));
-			msg(" - ref_hal_name: %s", str);
-			if (str)
-				free(str);
-		}
 		msg(" - userdata: %p", tcore_plugin_ref_user_data(p));
 		msg("");
 
