@@ -19,23 +19,23 @@ Description: Telephony daemon
 %setup -q
 
 %build
-cmake . -DCMAKE_INSTALL_PREFIX=%{_prefix} -DVERSION=%{version}
+%cmake . -DVERSION=%{version}
 make %{?jobs:-j%jobs}
 
 %install
 %make_install
-mkdir -p %{buildroot}%{_libdir}/systemd/system/multi-user.target.wants
-install -m 0644 %{SOURCE1} %{buildroot}%{_libdir}/systemd/system/telephony.service
-ln -s ../telephony.service %{buildroot}%{_libdir}/systemd/system/multi-user.target.wants/telephony.service
+mkdir -p %{buildroot}%{_prefix}/lib/systemd/system/multi-user.target.wants
+install -m 0644 %{SOURCE1} %{buildroot}%{_prefix}/lib/systemd/system/telephony.service
+ln -s ../telephony.service %{buildroot}%{_prefix}/lib/systemd/system/multi-user.target.wants/telephony.service
 mkdir -p %{buildroot}/usr/share/license
 
 %files
 %manifest telephony-daemon.manifest
 %defattr(-,root,root,-)
 %{_bindir}/telephony-daemon
-%{_initrddir}/telephony-daemon
+%{_sysconfdir}/rc.d/init.d/telephony-daemon
 %{_sysconfdir}/rc.d/rc3.d/S30telephony-daemon
 %{_sysconfdir}/rc.d/rc5.d/S30telephony-daemon
-%{_libdir}/systemd/system/telephony.service
-%{_libdir}/systemd/system/multi-user.target.wants/telephony.service
+%{_prefix}/lib/systemd/system/telephony.service
+%{_prefix}/lib/systemd/system/multi-user.target.wants/telephony.service
 /usr/share/license/telephony-daemon
