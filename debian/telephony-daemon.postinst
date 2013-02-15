@@ -1,0 +1,5 @@
+#!/bin/sh
+if [ ${USER} == "root" ]
+then
+	chown root:root /etc/rc.d/init.d/telephony-daemon
+fi
