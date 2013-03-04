@@ -1,7 +1,7 @@
 Name:       telephony-daemon
 Summary:    Telephony daemon
 Version:    0.1.12
-Release:    1
+Release:    2
 Group:      System/Telephony
 License:    Apache
 Source0:    %{name}-%{version}.tar.gz
