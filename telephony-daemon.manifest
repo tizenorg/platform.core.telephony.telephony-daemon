@@ -1,0 +1,16 @@
+<manifest>
+	<define>
+		<domain name="telephony_framework"/>
+		<provide>
+			<label name="telephony_framework::db"/>
+		</provide>
+	</define>
+	<assign>
+		<filesystem path="/etc/rc.d/init.d/telephony-daemon" label="_" exec_label="none"/>
+		<filesystem path="/etc/rc.d/rc3.d/S30telephony-daemon" label="_" exec_label="none"/>
+		<filesystem path="/etc/rc.d/rc5.d/S30telephony-daemon" label="_" exec_label="none"/>
+	</assign>
+	<request>
+		<domain name="telephony_framework"/>
+	</request>
+</manifest>
