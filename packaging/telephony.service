@@ -1,6 +1,6 @@
 [Unit]
 Description=Telephony daemon
-After=modem.service
+After=modem.service vconf-setup.service
 
 [Service]
 Type=simple
