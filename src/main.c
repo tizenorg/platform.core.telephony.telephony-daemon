@@ -73,11 +73,11 @@ static gboolean load_plugins(Server *s, const char *path, int flag_test_load)
 	TcorePlugin *p;
 	struct tcore_plugin_define_desc *desc;
 
-	if (!path || !s)
+	if ((path == NULL) || (s == NULL))
 		return FALSE;
 
 	dir = g_dir_open(path, 0, NULL);
-	if (!dir)
+	if (dir == NULL)
 		return FALSE;
 
 	while ((file = g_dir_read_name(dir)) != NULL) {
@@ -102,7 +102,7 @@ static gboolean load_plugins(Server *s, const char *path, int flag_test_load)
 		}
 
 		desc = dlsym(handle, "plugin_define_desc");
-		if (!desc) {
+		if (desc == NULL) {
 			dbg("fail to load symbol: %s", dlerror());
 			dlclose(handle);
 			g_free(filename);
@@ -146,17 +146,17 @@ static gboolean load_plugins(Server *s, const char *path, int flag_test_load)
 	list = tcore_server_ref_plugins(s);
 	for (; list; list = list->next) {
 		p = list->data;
-		if (!p)
+		if (p == NULL)
 			continue;
 
 		desc = (struct tcore_plugin_define_desc *)tcore_plugin_get_description(p);
-		if (!desc)
+		if (desc == NULL)
 			continue;
 
-		if (!desc->init)
+		if (desc->init == NULL)
 			continue;
 
-		if (!desc->init(p)) {
+		if (desc->init(p) == FALSE) {
 			dbg("plugin(%s) init failed.", tcore_plugin_get_filename(p));
 		}
 	}
@@ -177,7 +177,7 @@ static void usage(const char *name)
 
 static void on_signal_usr1(int signo)
 {
-	if (!_server)
+	if (_server == NULL)
 		return;
 
 	monitor_server_state(_server);
@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
 	while (1) {
 		opt = getopt_long(argc, argv, "hT", options, &opt_index);
 
-		if (-1 == opt)
+		if (opt == -1)
 			break;
 
 		switch (opt) {
@@ -258,13 +258,13 @@ int main(int argc, char *argv[])
 #endif
 
 	s = tcore_server_new();
-	if (!s) {
+	if (s == NULL) {
 		err("server_new failed.");
 		goto end;
 	}
 	_server = s;
 
-	if (!load_plugins(s, plugin_path, flag_test_load))
+	if (load_plugins(s, plugin_path, flag_test_load) == FALSE)
 		goto free_end;
 
 	if (flag_test_load)
