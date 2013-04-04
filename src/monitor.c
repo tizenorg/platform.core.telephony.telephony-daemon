@@ -75,7 +75,7 @@ static void _monitor_plugin(Server *s)
 
 
 		list = list->next;
-	} while(list);
+	} while (list);
 }
 
 static void _monitor_storage(Server *s)
@@ -97,7 +97,7 @@ static void _monitor_storage(Server *s)
 		msg("");
 
 		list = list->next;
-	} while(list);
+	} while (list);
 }
 
 static void _monitor_communicator(Server *s)
@@ -121,7 +121,7 @@ static void _monitor_communicator(Server *s)
 		msg("");
 
 		list = list->next;
-	} while(list);
+	} while (list);
 }
 
 static void _monitor_modems(Server *s)
@@ -135,13 +135,13 @@ static void _monitor_modems(Server *s)
 	if (list == NULL)
 		return;
 
-	do {
+	for (; list != NULL; list = g_slist_next(list)) {
 		p = list->data;
 		if (p == NULL)
 			continue;
 
 		tcore_server_print_modems(p);
-	} while(list);
+	}
 }
 
 void monitor_server_state(Server *s)
