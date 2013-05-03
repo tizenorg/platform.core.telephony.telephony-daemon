@@ -3,6 +3,17 @@
 		<domain name="telephony_framework"/>
 		<provide>
 			<label name="telephony_framework::db"/>
+			<label name="telephony_framework::api_manager"/>
+			<label name="telephony_framework::api_call"/>
+			<label name="telephony_framework::api_gps"/>
+			<label name="telephony_framework::api_modem"/>
+			<label name="telephony_framework::api_network"/>
+			<label name="telephony_framework::api_phonebook"/>
+			<label name="telephony_framework::api_sap"/>
+			<label name="telephony_framework::api_sat"/>
+			<label name="telephony_framework::api_sim"/>
+			<label name="telephony_framework::api_sms"/>
+			<label name="telephony_framework::api_ss"/>
 		</provide>
 	</define>
 	<assign>
