@@ -6,6 +6,7 @@ Group:      System/Telephony
 License:    Apache
 Source0:    %{name}-%{version}.tar.gz
 Source1:    telephony.service
+Source1001: 	telephony-daemon.manifest
 BuildRequires:  cmake
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  pkgconfig(gobject-2.0)
@@ -17,6 +18,7 @@ Description: Telephony daemon
 
 %prep
 %setup -q
+cp %{SOURCE1001} .
 
 %build
 %cmake . -DVERSION=%{version}
@@ -30,7 +32,7 @@ ln -s ../telephony.service %{buildroot}%{_prefix}/lib/systemd/system/multi-user.
 mkdir -p %{buildroot}/usr/share/license
 
 %files
-%manifest telephony-daemon.manifest
+%manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_bindir}/telephony-daemon
 %{_sysconfdir}/rc.d/init.d/telephony-daemon
