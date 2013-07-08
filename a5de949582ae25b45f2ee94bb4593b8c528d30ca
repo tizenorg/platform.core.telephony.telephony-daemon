@@ -1,0 +1,8 @@
+Change-Id: Ia5de949582ae25b45f2ee94bb4593b8c528d30ca
+Code-Review+2: Ryan Ware <ware@linux.intel.com>
+Verified+1: Ryan Ware <ware@linux.intel.com>
+Submitted-by: Ryan Ware <ware@linux.intel.com>
+Submitted-at: Mon, 08 Jul 2013 10:06:38 -0700
+Reviewed-on: https://review.tizen.org/gerrit/4562
+Project: platform/core/telephony/telephony-daemon
+Branch: refs/heads/tizen
