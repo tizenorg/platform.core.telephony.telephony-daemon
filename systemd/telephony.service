@@ -1,0 +1,10 @@
+[Unit]
+Description=Telephony daemon
+After=modem.service vconf-setup.service
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/telephony-daemon
+
+[Install]
+WantedBy=multi-user.target

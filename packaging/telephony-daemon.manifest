@@ -1,5 +1,36 @@
 <manifest>
- <request>
-    <domain name="_"/>
- </request>
+	<define>
+		<domain name="telephony_framework"/>
+		<provide>
+			<label name="telephony_framework::db"/>
+			<label name="telephony_framework::api_manager"/>
+			<label name="telephony_framework::api_call"/>
+			<label name="telephony_framework::api_gps"/>
+			<label name="telephony_framework::api_modem"/>
+			<label name="telephony_framework::api_network"/>
+			<label name="telephony_framework::api_phonebook"/>
+			<label name="telephony_framework::api_sap"/>
+			<label name="telephony_framework::api_sat"/>
+			<label name="telephony_framework::api_sim"/>
+			<label name="telephony_framework::api_sms"/>
+			<label name="telephony_framework::api_ss"/>
+			<label name="telephony_framework::vconf"/>
+		</provide>
+		<request>
+			<smack request="dbus" type="rwx"/>
+			<smack request="sys-assert::core" type="rwxat"/>
+			<smack request="system::use_internet" type="rwx"/>
+		</request>
+		<permit>
+			<smack permit="dbus" type="rwx"/>
+			<smack permit="system::use_internet" type="rwx"/>
+		</permit>
+	</define>
+	<assign>
+		<filesystem path="/usr/lib/systemd/system/telephony.service" label="_" exec_label="none" />
+		<filesystem path="/usr/lib/systemd/system/multi-user.target.wants/telephony.service" label="_" exec_label="none" />
+	</assign>
+	<request>
+		<domain name="telephony_framework"/>
+	</request>
 </manifest>
