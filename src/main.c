@@ -18,6 +18,7 @@
  * limitations under the License.
  */
 
+#include <systemd/sd-daemon.h>
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
@@ -271,6 +272,9 @@ int main(int argc, char *argv[])
 		goto free_end;
 
 	info("server mainloop start");
+
+	/* Notification to systemd */
+	sd_notify(0, "READY=1");
 
 	if (tcore_server_run(s) == FALSE) {
 		err("server_run failed.");
