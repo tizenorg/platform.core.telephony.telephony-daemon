@@ -1,9 +1,13 @@
+%define major 3
+%define minor 0
+%define patchlevel 1
+
 Name:       telephony-daemon
+Version:        %{major}.%{minor}.%{patchlevel}
+Release:        1
+License:        Apache-2.0
 Summary:    Telephony daemon
-Version:    0.1.13
-Release:    2
 Group:      System/Telephony
-License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
 Source1001: 	telephony-daemon.manifest
 BuildRequires:  cmake

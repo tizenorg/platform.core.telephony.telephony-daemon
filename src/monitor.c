@@ -1,15 +1,14 @@
 /*
  * telephony-daemon
  *
- * Copyright (c) 2012 Samsung Electronics Co., Ltd. All rights reserved.
- *
- * Contact: Ja-young Gu <jygu@samsung.com>
+ * Copyright 2013 Samsung Electronics Co. Ltd.
+ * Copyright 2013 Intel Corporation.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,86 +17,114 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <pthread.h>
-#include <unistd.h>
 #include <stdlib.h>
-#include <time.h>
-#include <dlfcn.h>
-#include <getopt.h>
 
 #include <glib.h>
-#include <glib-object.h>
-
-#include <tcore.h>
-#include <plugin.h>
-#include <server.h>
-#include <hal.h>
-#include <queue.h>
-#include <storage.h>
-#include <communicator.h>
-#include <user_request.h>
 
 #include "monitor.h"
 
-/* Hacking TcoreQueue */
+#include <server.h>
+#include <communicator.h>
+#include <plugin.h>
+//#include <hal.h>
+#include <core_object.h>
+#include <queue.h>
+#include <storage.h>
+
+#define NOTUSED(var) (var = var)
+
+/* hacking TcoreQueue */
 struct tcore_queue_type {
 	TcorePlugin *plugin;
 	GQueue *gq;
 };
 
+static void _hash_dump(gpointer key, gpointer value, gpointer user_data)
+{
+	NOTUSED(user_data);
+
+	msg("         - %s: [%s]", key, value);
+}
+
+static void _monitor_core_objects(GSList *list)
+{
+	CoreObject *co;
+	GHashTable *prop = NULL;
+
+	while (list) {
+		co = list->data;
+
+		msg("       Type: 0x%x", tcore_object_get_type(co));
+		msg("       - addr: %p", co);
+		//msg("       - hal: %p", tcore_object_get_hal(co));
+
+		//prop = tcore_object_ref_property_hash(co);
+		if (prop) {
+			msg("       - Properties: %d", g_hash_table_size(prop));
+			g_hash_table_foreach(prop, _hash_dump, NULL);
+		}
+
+		list = g_slist_next(list);
+	}
+}
+
 static void _monitor_plugin(Server *s)
 {
 	GSList *list;
-	TcorePlugin *p;
+	GSList *co_list = NULL;
+	TcorePlugin *plugin;
 	char *str;
 
 	msg("-- Plugins --");
 
 	list = tcore_server_ref_plugins(s);
-	if (list == NULL)
-		return;
+	while (list) {
+		plugin = list->data;
+		if (plugin != NULL) {
+			msg("Name: [%s]", tcore_plugin_get_description(plugin)->name);
 
-	do {
-		p = list->data;
+			str = tcore_plugin_get_filename(plugin);
+			if (str) {
+				msg(" - file: %s", str);
+				tcore_free(str);
+			}
 
-		msg("Name: [%s]", tcore_plugin_get_description(p)->name);
+			msg(" - addr: %p", plugin);
+			msg(" - userdata: %p", tcore_plugin_ref_user_data(plugin));
 
-		str = tcore_plugin_get_filename(p);
-		msg(" - file: %s", str);
-		if (str)
-			free(str);
+			co_list = tcore_plugin_ref_core_objects(plugin);
+			if (co_list) {
+				msg(" - core_object list: %d", g_slist_length(co_list));
 
-		msg(" - addr: %p", p);
-		msg(" - userdata: %p", tcore_plugin_ref_user_data(p));
-		msg("");
+				_monitor_core_objects(co_list);
+				g_slist_free(co_list);
+			}
 
+			msg("");
+		}
 
-		list = list->next;
-	} while (list);
+		list = g_slist_next(list);
+	}
 }
 
 static void _monitor_storage(Server *s)
 {
 	GSList *list;
-	Storage *strg;
+	TcoreStorage *strg;
 
 	msg("-- Storages --");
 
 	list = tcore_server_ref_storages(s);
-	if (list == NULL)
-		return;
-
-	do {
+	while (list) {
 		strg = list->data;
+		if (strg != NULL) {
+			msg("Name: [%s]", tcore_storage_ref_name(strg));
+			msg(" - addr: %p", strg);
+			msg("");
+		}
 
-		msg("Name: [%s]", tcore_storage_ref_name(strg));
-		msg(" - addr: %p", strg);
-		msg("");
-
-		list = list->next;
-	} while (list);
+		list = g_slist_next(list);
+	}
 }
 
 static void _monitor_communicator(Server *s)
@@ -108,39 +135,34 @@ static void _monitor_communicator(Server *s)
 	msg("-- Communicators --");
 
 	list = tcore_server_ref_communicators(s);
-	if (list == NULL)
-		return;
-
-	do {
+	while (list) {
 		comm = list->data;
+		if (comm != NULL) {
+			msg("Name: [%s]", tcore_communicator_ref_name(comm));
+			msg(" - addr: %p", comm);
+			msg(" - parent_plugin: %p", tcore_communicator_ref_plugin(comm));
+			msg(" - userdata: %p", tcore_communicator_ref_user_data(comm));
+			msg("");
+		}
 
-		msg("Name: [%s]", tcore_communicator_ref_name(comm));
-		msg(" - addr: %p", comm);
-		msg(" - parent_plugin: %p", tcore_communicator_ref_plugin(comm));
-		msg(" - userdata: %p", tcore_communicator_ref_user_data(comm));
-		msg("");
-
-		list = list->next;
-	} while (list);
+		list = g_slist_next(list);
+	}
 }
 
 static void _monitor_modems(Server *s)
 {
 	GSList *list;
-	TcorePlugin *p;
+	TcorePlugin *plugin;
 
 	msg("-- Modems --");
 
 	list = tcore_server_ref_plugins(s);
-	if (list == NULL)
-		return;
+	while (list) {
+		plugin = list->data;
+		if (plugin != NULL)
+			tcore_server_print_modems(plugin);
 
-	for (; list != NULL; list = g_slist_next(list)) {
-		p = list->data;
-		if (p == NULL)
-			continue;
-
-		tcore_server_print_modems(p);
+		list = g_slist_next(list);
 	}
 }
 
