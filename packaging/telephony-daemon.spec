@@ -16,6 +16,7 @@ BuildRequires:  pkgconfig(gobject-2.0)
 BuildRequires:  pkgconfig(tcore)
 BuildRequires:  pkgconfig(dlog)
 BuildRequires:  pkgconfig(libsystemd-daemon)
+BuildRequires:  pkgconfig(tel-headers)
 Requires(post):           sys-assert
 %{?systemd_requires}
 

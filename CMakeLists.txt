@@ -8,7 +8,7 @@ SET(INCLUDEDIR "\${prefix}/include")
 
 # Set required packages
 INCLUDE(FindPkgConfig)
-pkg_check_modules(pkgs REQUIRED glib-2.0 gobject-2.0 tcore dlog libsystemd-daemon)
+pkg_check_modules(pkgs REQUIRED glib-2.0 gobject-2.0 tcore tel-headers dlog libsystemd-daemon)
 
 FOREACH(flag ${pkgs_CFLAGS})
 	SET(EXTRA_CFLAGS "${EXTRA_CFLAGS} ${flag}")
