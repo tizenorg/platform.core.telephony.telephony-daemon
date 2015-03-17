@@ -1,0 +1,14 @@
+[Unit]
+Description=Telephony daemon
+Requires=dbus.socket
+After=factory-reset.service secure-storage.service dlog_logger.service shutdown.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/telephony-daemon
+Restart=always
+RestartSec=0
+KillMode=none
+
+[Install]
+WantedBy=multi-user.target

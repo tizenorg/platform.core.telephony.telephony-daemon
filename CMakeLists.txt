@@ -8,7 +8,7 @@ SET(INCLUDEDIR "\${prefix}/include")
 
 # Set required packages
 INCLUDE(FindPkgConfig)
-pkg_check_modules(pkgs REQUIRED glib-2.0 gobject-2.0 tcore tel-headers dlog libsystemd-daemon)
+pkg_check_modules(pkgs REQUIRED glib-2.0 vconf tcore dlog)
 
 FOREACH(flag ${pkgs_CFLAGS})
 	SET(EXTRA_CFLAGS "${EXTRA_CFLAGS} ${flag}")
@@ -16,38 +16,39 @@ ENDFOREACH(flag)
 
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include/)
 
-SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EXTRA_CFLAGS} -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wdeclaration-after-statement -Wmissing-declarations -Wredundant-decls -Wcast-align")
+SET(ADDITIONAL_CFLAGS "-Wno-array-bounds -Wno-empty-body -Wno-ignored-qualifiers -Wshadow -Wwrite-strings -Wswitch-default -Wno-unused-but-set-parameter -Wno-unused-but-set-variable")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EXTRA_CFLAGS} -Werror -Wextra -Wall -Wdeclaration-after-statement -Wmissing-declarations -Wredundant-decls -Wcast-align -Wcast-qual")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${ADDITIONAL_CFLAGS}")
 
 ADD_DEFINITIONS("-DFEATURE_TLOG_DEBUG")
 ADD_DEFINITIONS("-DTCORE_LOG_TAG=\"DAEMON\"")
 ADD_DEFINITIONS("-DDAEMON_VERSION=\"${VERSION}\"")
 ADD_DEFINITIONS("-DDEFAULT_PLUGINS_PATH=\"/usr/lib/telephony/plugins/\"")
 
-IF (ENABLE_MONITOR)
-	ADD_DEFINITIONS("-DENABLE_MONITOR")
-ENDIF (ENABLE_MONITOR)
+IF (TIZEN_DEBUG_ENABLE)
+	ADD_DEFINITIONS ("-DTIZEN_DEBUG_ENABLE")
+ENDIF (TIZEN_DEBUG_ENABLE)
+
 
 MESSAGE(${CMAKE_C_FLAGS})
 MESSAGE(${pkgs_LDFLAGS})
 
-IF (ENABLE_MONITOR)
+IF (TIZEN_DEBUG_ENABLE)
 SET(SRCS
-        src/main.c
-        src/monitor.c
+	src/main.c
+	src/monitor.c
 )
-ELSE (ENABLE_MONITOR)
+ELSE (TIZEN_DEBUG_ENABLE)
 SET(SRCS
-        src/main.c
+	src/main.c
 )
-ENDIF (ENABLE_MONITOR)
+ENDIF (TIZEN_DEBUG_ENABLE)
 
 # binary build
 ADD_EXECUTABLE(${PROJECT_NAME} ${SRCS})
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${pkgs_LDFLAGS} "-ldl")
 
-
 # install
 INSTALL(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
-
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/LICENSE DESTINATION /usr/share/license RENAME telephony-daemon)
-INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/systemd/telephony.service DESTINATION /usr/lib/systemd/system)
+INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/packaging/telephony-daemon.service DESTINATION /usr/lib/systemd/system)

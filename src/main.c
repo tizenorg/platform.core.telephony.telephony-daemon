@@ -1,14 +1,15 @@
 /*
  * telephony-daemon
  *
- * Copyright 2013 Samsung Electronics Co. Ltd.
- * Copyright 2013 Intel Corporation.
+ * Copyright (c) 2013 Samsung Electronics Co. Ltd. All rights reserved.
+ *
+ * Contact: Ja-young Gu <jygu@samsung.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +17,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#ifdef TIZEN_DEBUG_ENABLE
+#include "monitor.h"
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -25,18 +30,14 @@
 #include <getopt.h>
 #include <sys/stat.h>
 #include <sys/sysinfo.h>
-#include <systemd/sd-daemon.h>
 
 #include <glib.h>
 #include <dlog.h>
-
-#ifdef ENABLE_MONITOR
-#include "monitor.h"
-#endif
+#include <vconf.h>
 
 #include <tcore.h>
-#include <server.h>
 #include <plugin.h>
+#include <server.h>
 
 #ifndef DAEMON_VERSION
 #define DAEMON_VERSION "unknown"
@@ -46,11 +47,14 @@
 #define DEFAULT_PLUGINS_PATH "/usr/lib/telephony/plugins/"
 #endif
 
+/* Internal vconf to maintain telephony load info (Number of times telephony daemon is loaded) */
+#define VCONFKEY_TELEPHONY_DAEMON_LOAD_COUNT "memory/private/telephony/daemon_load_count"
+
 #define NOTUSED(var) (var = var)
 
 static Server *_server = NULL;
 
-static void __usage_info(const gchar *exec)
+static void __usage_info(const char *exec)
 {
 	printf("Usage: %s [OPTION]... [PLUGIN_PATH]\n", exec);
 	printf("\n");
@@ -59,16 +63,51 @@ static void __usage_info(const gchar *exec)
 	printf("\n");
 }
 
-void tcore_log(enum tcore_log_type type, enum tcore_log_priority priority, const gchar *tag, const gchar *fmt, ...)
+void tcore_log(enum tcore_log_type type, enum tcore_log_priority priority, const char *tag, const char *fmt, ...)
 {
 	va_list ap;
-	gchar buf[1024];
+	char buf[1024];
 
-	va_start(ap, fmt);
-	vsnprintf(buf, 1023, fmt, ap);
-	va_end(ap);
+	switch (type) {
+	case TCORE_LOG_TYPE_RADIO: {
+		if (priority >= TCORE_LOG_INFO) {
+			va_start(ap, fmt);
+			vsnprintf(buf, 1023, fmt, ap);
+			va_end(ap);
+			__dlog_print(LOG_ID_RADIO, priority, tag, buf);
+		} else {
+		#ifdef TIZEN_DEBUG_ENABLE
+			va_start(ap, fmt);
+			vsnprintf(buf, 1023, fmt, ap);
+			va_end(ap);
+			__dlog_print(LOG_ID_RADIO, priority, tag, buf);
+		#endif
+		}
+	} break;
 
-	__dlog_print(type, priority, tag, buf);
+	case TCORE_LOG_TYPE_TIME_CHECK: {
+	#ifdef TIZEN_DEBUG_ENABLE /* User Mode should not log performance data */
+		float a = 0.00, b = 0.00;
+		int next = 0;
+		FILE *fp = fopen("/proc/uptime", "r");
+		g_return_if_fail(NULL != fp);
+
+		if(fscanf(fp, "%f %f", &a, &b)){};
+		fclose(fp);
+		next = sprintf(buf, "[UPTIME] %f ", a);
+		if (next < 0)
+			return;
+
+		va_start(ap, fmt);
+		vsnprintf(buf + next, 1023 - next, fmt, ap);
+		va_end(ap);
+		__dlog_print(LOG_ID_RADIO, priority, tag, buf);
+	#endif
+	} break;
+
+	default:
+	break;
+	}
 }
 
 static void glib_log(const gchar *log_domain, GLogLevelFlags log_level,
@@ -81,13 +120,11 @@ static void glib_log(const gchar *log_domain, GLogLevelFlags log_level,
 	__dlog_print (LOG_ID_RADIO, DLOG_ERROR, "GLIB", msg);
 }
 
-#ifdef ENABLE_MONITOR
-static void telephony_signal_handler(gint signo)
+#ifdef TIZEN_DEBUG_ENABLE
+static void telephony_signal_handler(int signo)
 {
-	if (_server == NULL) {
-		err("Server is NULL");
+	if (!_server)
 		return;
-	}
 
 	switch (signo) {
 	case SIGUSR1: {
@@ -95,13 +132,15 @@ static void telephony_signal_handler(gint signo)
 	} break;
 
 	case SIGTERM: {
-		tcore_server_free(_server);
+		tcore_server_exit(_server);
 	} break;
 
 	default: {
 		warn("*~*~*~* Unhandled Signal: [%d] *~*~*~*", signo);
 	} break;
 	} /* end switch */
+
+	return;
 }
 #endif
 
@@ -110,10 +149,8 @@ static void __log_uptime()
 	float a = 0.00, b = 0.00;
 	FILE *fp = fopen("/proc/uptime", "r");
 	g_return_if_fail(NULL != fp);
-
-	info("Scanned %d items", fscanf(fp, "%f %f", &a, &b));
+	info("scanned %d items", fscanf(fp, "%f %f", &a, &b));
 	info("proc uptime = %f idletime = %f\n", a, b);
-
 	fclose(fp);
 }
 
@@ -121,16 +158,14 @@ static gboolean __init_plugin(TcorePlugin *plugin)
 {
 	const struct tcore_plugin_define_desc *desc = tcore_plugin_get_description(plugin);
 
-	if ((desc == NULL) || (desc->init == NULL)) {
-		err("desc: [%p] desc->init: [%p]", desc, (desc ? desc->init : NULL));
+	if (!desc || !desc->init)
 		return FALSE;
-	}
 
-	if (desc->init(plugin) == FALSE) {		/* TODO: Remove plugin from server */
-		gchar *plugin_name = tcore_plugin_get_filename(plugin);
-		if (plugin_name != NULL) {
-			err("Plug-in '%s' init failed!!!", plugin_name);
-			tcore_free(plugin_name);
+	if (!desc->init(plugin)) { /* TODO: Remove plugin from server */
+		char *plugin_name = tcore_plugin_get_filename(plugin);
+		if (NULL != plugin_name) {
+			err("plugin(%s) init failed.", plugin_name);
+			free(plugin_name);
 		}
 		return FALSE;
 	}
@@ -150,32 +185,30 @@ static gboolean init_plugins(Server *s)
 		list = g_slist_next(list);
 	}
 
-	info("[TIME_CHECK] plugin init finished");
 	return TRUE;
 }
 
 static void *__load_plugin(const gchar *filename, struct tcore_plugin_define_desc **desc_out)
 {
-	void *handle;
-	struct tcore_plugin_define_desc *desc;
+	void *handle = NULL;
+	struct tcore_plugin_define_desc *desc = NULL;
 	struct stat stat_buf;
-	gchar file_date[27];
+	char file_date[27];
 
-	handle = dlopen(filename, RTLD_NOW);
+	handle = dlopen(filename, RTLD_LAZY);
 	if (G_UNLIKELY(NULL == handle)) {
-		err("Failed to open '%s': %s", filename, dlerror());
+		err("fail to load '%s': %s", filename, dlerror());
 		return NULL;
 	}
 
 	desc = dlsym(handle, "plugin_define_desc");
 	if (G_UNLIKELY(NULL == desc)) {
-		err("Failed to load symbol: %s", dlerror());
-
+		err("fail to load symbol: %s", dlerror());
 		dlclose(handle);
 		return NULL;
 	}
 
-	dbg("'%s' plugin", desc->name);
+	dbg("%s plugin", desc->name);
 	dbg(" - path = %s", filename);
 	dbg(" - version = %d", desc->version);
 	dbg(" - priority = %d", desc->priority);
@@ -183,31 +216,29 @@ static void *__load_plugin(const gchar *filename, struct tcore_plugin_define_des
 	memset(&stat_buf, 0x00, sizeof(stat_buf));
 	memset(&file_date, '\0', sizeof(file_date));
 
-	if (stat(filename, &stat_buf) == 0) {
-		if (ctime_r(&stat_buf.st_mtime, file_date) != NULL) {
-			if (strlen(file_date) > 1)
+	if (0 == stat(filename, &stat_buf)) {
+		if (NULL != ctime_r(&stat_buf.st_mtime, file_date)) {
+			if (1 < strlen(file_date))
 				file_date[strlen(file_date)-1] = '\0';
-
 			dbg(" - date = %s", file_date);
 		}
 	}
 
 	if (G_LIKELY(desc->load)) {
-		if (G_UNLIKELY(desc->load() == FALSE)) {
-			warn("Failed to load Plug-in");
-
+		if (G_UNLIKELY(FALSE == desc->load())) {
+			warn("false return from load(). skip this plugin");
 			dlclose(handle);
 			return NULL;
 		}
 	}
 
-	if (desc_out != NULL)
+	if (NULL != desc_out)
 		*desc_out = desc;
 
 	return handle;
 }
 
-static gboolean load_plugins(Server *s, const gchar *path, gboolean flag_test_load)
+static gboolean load_plugins(Server *s, const char *path, gboolean flag_test_load)
 {
 	const gchar *file = NULL;
 	gchar *filename = NULL;
@@ -215,20 +246,16 @@ static gboolean load_plugins(Server *s, const gchar *path, gboolean flag_test_lo
 	void *handle = NULL;
 	struct tcore_plugin_define_desc *desc = NULL;
 
-	if ((path == NULL) || (s == NULL)) {
-		err("path: [%p] s: [%p]", path, s);
+	if (!path || !s)
 		return FALSE;
-	}
 
 	dir = g_dir_open(path, 0, NULL);
-	if (dir == NULL) {
-		err("Failed to open directory '%s'", path);
+	if (!dir)
 		return FALSE;
-	}
 
 	while ((file = g_dir_read_name(dir)) != NULL) {
 		if (g_str_has_prefix(file, "lib") == TRUE
-				|| g_str_has_suffix(file, ".so") == FALSE)
+			|| g_str_has_suffix(file, ".so") == FALSE)
 			continue;
 
 		filename = g_build_filename(path, file, NULL);
@@ -241,45 +268,44 @@ static gboolean load_plugins(Server *s, const gchar *path, gboolean flag_test_lo
 
 		/* Don't add to server if flag_test_load */
 		if (flag_test_load) {
-			dbg("Loading '%s' - Successful", filename);
-
+			dbg("success to load '%s'", filename);
 			dlclose(handle);
 			g_free(filename);
 			continue;
 		}
 
-		/* Add Plug-in to Server Plug-in list */
 		tcore_server_add_plugin(s, tcore_plugin_new(s, desc, filename, handle));
-		dbg("'%s' added", desc->name);
 
+		dbg("%s added", desc->name);
 		g_free(filename);
 	}
-
 	g_dir_close(dir);
-	info("[TIME_CHECK] Plug-in load finished");
 
 	return TRUE;
 }
 
-gint main(gint argc, gchar *argv[])
+int main(int argc, char *argv[])
 {
-#ifdef ENABLE_MONITOR
+#ifdef TIZEN_DEBUG_ENABLE
 	struct sigaction sigact;
 #endif
-	Server *s;
+	Server *s = NULL;
 	gboolean flag_test_load = FALSE;
-	gint opt = 0, opt_index = 0, ret_code = EXIT_SUCCESS;
+	int opt = 0, opt_index = 0, ret_code = EXIT_SUCCESS;
+	int daemon_load_count = 0;
 	struct option options[] = {
 		{ "help", 0, 0, 0 },
 		{ "testload", 0, &flag_test_load, 1 },
 		{ 0, 0, 0, 0 }
 	};
-	gchar *plugin_path = DEFAULT_PLUGINS_PATH;
-	gchar *tcore_ver = NULL;
+	const char *plugin_path = DEFAULT_PLUGINS_PATH;
+	char *tcore_ver = NULL;
 	struct sysinfo sys_info;
 
+	TIME_CHECK("Starting Telephony");
+
 	/* System Uptime */
-	if (sysinfo(&sys_info) == 0)
+	if (0 == sysinfo(&sys_info))
 		info("uptime: %ld secs", sys_info.uptime);
 	__log_uptime();
 
@@ -287,10 +313,16 @@ gint main(gint argc, gchar *argv[])
 	tcore_ver = tcore_util_get_version();
 	info("daemon version: %s", DAEMON_VERSION);
 	info("libtcore version: %s", tcore_ver);
-	tcore_free(tcore_ver);
+	free(tcore_ver);
 	info("glib version: %u.%u.%u", glib_major_version, glib_minor_version, glib_micro_version);
 
-#ifdef ENABLE_MONITOR
+	/* Telephony reset handling*/
+	vconf_get_int(VCONFKEY_TELEPHONY_DAEMON_LOAD_COUNT,&daemon_load_count);
+	daemon_load_count++;
+	vconf_set_int(VCONFKEY_TELEPHONY_DAEMON_LOAD_COUNT,daemon_load_count);
+	dbg("daemon load count = [%d]", daemon_load_count);
+
+#ifdef TIZEN_DEBUG_ENABLE
 	/* Signal Registration */
 	sigact.sa_handler = telephony_signal_handler;
 	sigemptyset(&sigact.sa_mask);
@@ -299,26 +331,13 @@ gint main(gint argc, gchar *argv[])
 		warn("sigaction(SIGTERM) failed.");
 	if (sigaction(SIGUSR1, &sigact, NULL) < 0)
 		warn("sigaction(SIGUSR1) failed.");
-
-	/* Additional signals for dedugging the cause of Telephony crash */
-	if (sigaction(SIGINT, &sigact, NULL) < 0)
-		warn("sigaction(SIGINT) failed.");
-	if (sigaction(SIGABRT, &sigact, NULL) < 0)
-		warn("sigaction(SIGABRT) failed.");
-	if (sigaction(SIGHUP, &sigact, NULL) < 0)
-		warn("sigaction(SIGHUP) failed.");
-	if (sigaction(SIGSEGV, &sigact, NULL) < 0)
-		warn("sigaction(SIGSEGV) failed.");
-	if (sigaction(SIGXCPU, &sigact, NULL) < 0)
-		warn("sigaction(SIGXCPU) failed.");
-	if (sigaction(SIGQUIT, &sigact, NULL) < 0)
-		warn("sigaction(SIGQUIT) failed.");
 #endif
 
 	/* Commandline option parser TODO: Replace with GOptionContext */
 	while (TRUE) {
 		opt = getopt_long(argc, argv, "hT", options, &opt_index);
-		if (opt == -1)
+
+		if (-1 == opt)
 			break;
 
 		switch (opt) {
@@ -327,6 +346,9 @@ gint main(gint argc, gchar *argv[])
 			case 0: {
 				__usage_info(argv[0]);
 				return 0;
+			} break;
+			default: {
+				warn("unhandled opt_index.");
 			} break;
 			} /* end switch */
 		} break;
@@ -338,6 +360,9 @@ gint main(gint argc, gchar *argv[])
 
 		case 'T': {
 			flag_test_load = TRUE;
+		} break;
+		default: {
+			warn("unhandled opt case.");
 		} break;
 		} /* end switch */
 	}
@@ -357,18 +382,21 @@ gint main(gint argc, gchar *argv[])
 	s = tcore_server_new();
 	if (G_UNLIKELY(NULL == s)) {
 		err("server_new failed.");
-		return EXIT_FAILURE;
+		ret_code = EXIT_FAILURE;
+		goto END;
 	}
 	_server = s;
 
 	g_log_set_default_handler(glib_log, s);
 
 	/* Load Plugins */
-	if (G_UNLIKELY(FALSE == load_plugins(s, (const gchar *)plugin_path, flag_test_load))) {
+	if (G_UNLIKELY(FALSE == load_plugins(s, (const char *)plugin_path, flag_test_load))) {
 		err("load_plugins failed.");
 		ret_code = EXIT_FAILURE;
 		goto END;
 	}
+
+	TIME_CHECK("Loading Plugins Complete");
 
 	if (flag_test_load) {
 		ret_code = EXIT_SUCCESS;
@@ -382,19 +410,15 @@ gint main(gint argc, gchar *argv[])
 		goto END;
 	}
 
-	info("Server mainloop start");
+	info("server mainloop start");
+	TIME_CHECK("Initializing Plugins Complete. Starting Daemon");
 
-	/* Notification to systemd */
-	sd_notify(0, "READY=1");
-
-	/* Server Run */
-	if (G_UNLIKELY(FALSE == tcore_server_run(s))) {
-		err("Server_run - Failed!!!");
+	if (G_UNLIKELY(TCORE_RETURN_SUCCESS != tcore_server_run(s))) {
+		err("server_run failed.");
 		ret_code = EXIT_FAILURE;
 	}
 
 END:
-	tcore_server_free(s);
-
+	tcore_server_free(s); _server = NULL;
 	return ret_code;
 }

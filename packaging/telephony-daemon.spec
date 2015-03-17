@@ -1,47 +1,45 @@
-%define major 3
-%define minor 0
-%define patchlevel 1
+%define major 1
+%define minor 3
+%define patchlevel 24
 
-Name:       telephony-daemon
+Name:           telephony-daemon
 Version:        %{major}.%{minor}.%{patchlevel}
 Release:        1
-License:        Apache-2.0
-Summary:    Telephony daemon
-Group:      System/Telephony
-Source0:    %{name}-%{version}.tar.gz
-Source1001: 	telephony-daemon.manifest
+License:        Apache
+Summary:        Telephony Daemon
+Group:          System/Telephony
+Source0:        %{name}-%{version}.tar.gz
 BuildRequires:  cmake
-BuildRequires:  pkgconfig(glib-2.0)
-BuildRequires:  pkgconfig(gobject-2.0)
-BuildRequires:  pkgconfig(tcore)
 BuildRequires:  pkgconfig(dlog)
-BuildRequires:  pkgconfig(libsystemd-daemon)
-BuildRequires:  pkgconfig(tel-headers)
+BuildRequires:  pkgconfig(glib-2.0)
+BuildRequires:  pkgconfig(tcore)
+BuildRequires:  pkgconfig(vconf)
 Requires(post):           sys-assert
-%{?systemd_requires}
 
 %description
-Description: Telephony daemon
+Description: Telephony Daemon
 
 %prep
 %setup -q
-cp %{SOURCE1001} .
 
 %build
-%cmake . -DVERSION=%{version}
-make %{?jobs:-j%jobs}
+cmake . -DCMAKE_INSTALL_PREFIX=%{_prefix} -DVERSION=%{version} \
+	-DTIZEN_DEBUG_ENABLE=1 \
+
+make %{?_smp_mflags}
 
 %install
+
 %make_install
-mkdir -p %{buildroot}%{_prefix}/lib/systemd/system/multi-user.target.wants
-ln -s ../telephony.service %{buildroot}%{_prefix}/lib/systemd/system/multi-user.target.wants/telephony.service
-mkdir -p %{buildroot}/usr/share/license
-cp LICENSE %{buildroot}/usr/share/license/%{name}
+mkdir -p %{buildroot}%{_libdir}/systemd/system/multi-user.target.wants
+ln -s %{_libdir}/systemd/system/telephony-daemon.service %{buildroot}%{_libdir}/systemd/system/multi-user.target.wants/telephony-daemon.service
+
+%post -p /sbin/ldconfig
 
 %files
-%manifest %{name}.manifest
+%manifest telephony-daemon.manifest
 %defattr(-,root,root,-)
 %{_bindir}/telephony-daemon
-%{_prefix}/lib/systemd/system/telephony.service
-%{_prefix}/lib/systemd/system/multi-user.target.wants/telephony.service
-/usr/share/license/%{name}
+%attr(644,root,root) %{_libdir}/systemd/system/telephony-daemon.service
+%attr(644,root,root) %{_libdir}/systemd/system/multi-user.target.wants/telephony-daemon.service
+%{_datadir}/license/telephony-daemon

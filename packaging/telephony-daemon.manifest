@@ -1,9 +1,0 @@
-<manifest>
-	<assign>
-		<filesystem path="/usr/lib/systemd/system/telephony.service" label="_" exec_label="none" />
-		<filesystem path="/usr/lib/systemd/system/multi-user.target.wants/telephony.service" label="_" exec_label="none" />
-	</assign>
-	<request>
-		<domain name="_"/>
-	</request>
-</manifest>

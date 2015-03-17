@@ -1,0 +1,6 @@
+## Restart Telephony Daemon
+systemctl restart telephony-daemon.service
+
+## Stop Telephony Daemon
+systemctl stop telephony-daemon.service
+

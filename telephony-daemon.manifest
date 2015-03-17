@@ -1,0 +1,72 @@
+<manifest>
+	<define>
+		<domain name="telephony_framework" policy="restricted"/>
+		<provide>
+			<label name="telephony_framework::db"/>
+			<label name="telephony_framework::api_manager"/>
+			<label name="telephony_framework::api_call"/>
+			<label name="telephony_framework::api_gps"/>
+			<label name="telephony_framework::api_modem"/>
+			<label name="telephony_framework::api_network"/>
+			<label name="telephony_framework::api_phonebook"/>
+			<label name="telephony_framework::api_sap"/>
+			<label name="telephony_framework::api_sat"/>
+			<label name="telephony_framework::api_sim"/>
+			<label name="telephony_framework::api_sms"/>
+			<label name="telephony_framework::api_ss"/>
+			<label name="telephony_framework::api_ps_public"/>
+			<label name="telephony_framework::api_ps_profile"/>
+			<label name="telephony_framework::api_ps_private"/>
+			<label name="telephony_framework::api_private"/>
+			<label name="telephony_framework::vconf"/>
+			<label name="telephony_framework::properties"/>
+		</provide>
+		<request>
+			<smack request="telephony_framework::db" type="rwx"/>
+			<smack request="telephony_framework::api_manager" type="rwx"/>
+			<smack request="telephony_framework::api_call" type="rwx"/>
+			<smack request="telephony_framework::api_gps" type="rwx"/>
+			<smack request="telephony_framework::api_modem" type="rwx"/>
+			<smack request="telephony_framework::api_network" type="rwx"/>
+			<smack request="telephony_framework::api_phonebook" type="rwx"/>
+			<smack request="telephony_framework::api_sap" type="rwx"/>
+			<smack request="telephony_framework::api_sat" type="rwx"/>
+			<smack request="telephony_framework::api_sim" type="rwx"/>
+			<smack request="telephony_framework::api_sms" type="rwx"/>
+			<smack request="telephony_framework::api_ss" type="rwx"/>
+			<smack request="telephony_framework::api_ps_public" type="rwx"/>
+			<smack request="telephony_framework::api_ps_profile" type="rwx"/>
+			<smack request="telephony_framework::api_ps_private" type="rwx"/>
+			<smack request="telephony_framework::api_private" type="rwx"/>
+			<smack request="telephony_framework::vconf" type="rwx"/>
+			<smack request="telephony_framework::properties" type="rwx"/>
+			<smack request="dbus" type="rwx"/>
+			<smack request="sys-assert::core" type="rwxat"/>
+			<smack request="system::use_internet" type="rwx"/>
+			<smack request="secure-storage::telephony_sim" type="rw"/>
+			<smack request="security-server::api-privilege-by-pid" type="w"/>
+			<smack request="deviced::display" type="rw"/>
+			<smack request="system::vconf" type="rwxat"/>
+			<smack request="system::vconf_system" type="rwxat"/>
+		</request>
+		<permit>
+			<smack permit="dbus" type="rwx"/>
+			<smack permit="system::use_internet" type="rwx"/>
+		</permit>
+	</define>
+	<assign>
+		<filesystem path="/usr/lib/systemd/system/telephony-daemon.service" label="_"/>
+		<filesystem path="/usr/lib/systemd/system/tizen-system.target.wants/telephony-daemon.service" label="_"/>
+		<filesystem path="db/telephony" label="telephony_framework::db"/>
+		<dbus name="org.tizen.telephony" own="telephony_framework" bus="system">
+			<node name="/org/tizen/telephony">
+				<interface name="org.freedesktop.DBus.Properties">
+					<annotation name="com.tizen.smack" value="telephony_framework::properties"/>
+				</interface>
+			</node>
+		</dbus>
+	</assign>
+	<request>
+		<domain name="telephony_framework"/>
+	</request>
+</manifest>
