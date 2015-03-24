@@ -23,7 +23,9 @@ Description: Telephony Daemon
 %setup -q
 
 %build
-cmake . -DCMAKE_INSTALL_PREFIX=%{_prefix} -DVERSION=%{version} \
+cmake . -DCMAKE_INSTALL_PREFIX=%{_prefix} \
+	-DLIB_INSTALL_DIR=%{_libdir} \
+	-DVERSION=%{version} \
 	-DTIZEN_DEBUG_ENABLE=1 \
 
 make %{?_smp_mflags}
