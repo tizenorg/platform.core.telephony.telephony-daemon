@@ -47,9 +47,6 @@
 #define DEFAULT_PLUGINS_PATH "/usr/lib/telephony/plugins/"
 #endif
 
-/* Internal vconf to maintain telephony load info (Number of times telephony daemon is loaded) */
-#define VCONFKEY_TELEPHONY_DAEMON_LOAD_COUNT "memory/private/telephony/daemon_load_count"
-
 #define NOTUSED(var) (var = var)
 
 static Server *_server = NULL;
