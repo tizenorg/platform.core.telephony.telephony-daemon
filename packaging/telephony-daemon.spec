@@ -14,7 +14,6 @@ BuildRequires:  pkgconfig(dlog)
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  pkgconfig(tcore)
 BuildRequires:  pkgconfig(vconf)
-Requires(post):           sys-assert
 
 %description
 Description: Telephony Daemon

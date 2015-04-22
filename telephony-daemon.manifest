@@ -41,7 +41,6 @@
 			<smack request="telephony_framework::vconf" type="rwx"/>
 			<smack request="telephony_framework::properties" type="rwx"/>
 			<smack request="dbus" type="rwx"/>
-			<smack request="sys-assert::core" type="rwxat"/>
 			<smack request="system::use_internet" type="rwx"/>
 			<smack request="secure-storage::telephony_sim" type="rw"/>
 			<smack request="security-server::api-privilege-by-pid" type="w"/>
