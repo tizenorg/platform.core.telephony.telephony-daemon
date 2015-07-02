@@ -67,7 +67,7 @@ static void _monitor_core_objects(GSList *list)
 		}
 
 		list = list->next;
-	} while(list);
+	} while (list);
 }
 
 static void _monitor_plugin(Server *s)
@@ -108,7 +108,7 @@ static void _monitor_plugin(Server *s)
 		msg("");
 
 		list = list->next;
-	} while(list);
+	} while (list);
 }
 
 static void _monitor_storage(Server *s)
@@ -130,7 +130,7 @@ static void _monitor_storage(Server *s)
 		msg("");
 
 		list = list->next;
-	} while(list);
+	} while (list);
 }
 
 static void _monitor_communicator(Server *s)
@@ -154,7 +154,7 @@ static void _monitor_communicator(Server *s)
 		msg("");
 
 		list = list->next;
-	} while(list);
+	} while (list);
 }
 
 static void _monitor_hal(Server *s)
@@ -208,9 +208,9 @@ static void _monitor_hal(Server *s)
 			pending = g_queue_peek_nth(q->gq, i);
 			ur = tcore_pending_ref_user_request(pending);
 			msg("   [%02d] pending=%p, id=0x%x, ur=%p", i, pending, tcore_pending_get_id(pending), ur);
-			if (ur) {
+			if (ur)
 				msg("        ur request command = 0x%x", tcore_user_request_get_command(ur));
-			}
+
 			data_len = 0;
 			data = tcore_pending_ref_request_data(pending, &data_len);
 			msg("        data=%p, data_len=%d", data, data_len);
@@ -219,7 +219,7 @@ static void _monitor_hal(Server *s)
 		msg("");
 
 		list = list->next;
-	} while(list);
+	} while (list);
 }
 
 void monitor_server_state(Server *s)

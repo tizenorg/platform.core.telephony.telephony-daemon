@@ -1,11 +1,11 @@
 %define major 1
 %define minor 3
-%define patchlevel 24
+%define patchlevel 33
 
 Name:           telephony-daemon
 Version:        %{major}.%{minor}.%{patchlevel}
 Release:        1
-License:        Apache
+License:        Apache-2.0
 Summary:        Telephony Daemon
 Group:          System/Telephony
 Source0:        %{name}-%{version}.tar.gz
@@ -39,8 +39,8 @@ ln -s %{_libdir}/systemd/system/telephony-daemon.service %{buildroot}%{_libdir}/
 
 %files
 %manifest telephony-daemon.manifest
-%defattr(-,root,root,-)
-%{_bindir}/telephony-daemon
-%attr(644,root,root) %{_libdir}/systemd/system/telephony-daemon.service
-%attr(644,root,root) %{_libdir}/systemd/system/multi-user.target.wants/telephony-daemon.service
+%defattr(644,system,system,-)
+%caps(cap_mac_override,cap_dac_override,cap_net_admin=eip) %attr(755,system,system) %{_bindir}/telephony-daemon
+%{_libdir}/systemd/system/telephony-daemon.service
+%{_libdir}/systemd/system/multi-user.target.wants/telephony-daemon.service
 %{_datadir}/license/telephony-daemon

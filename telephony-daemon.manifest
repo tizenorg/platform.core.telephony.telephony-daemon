@@ -18,7 +18,6 @@
 			<label name="telephony_framework::api_ps_profile"/>
 			<label name="telephony_framework::api_ps_private"/>
 			<label name="telephony_framework::api_private"/>
-			<label name="telephony_framework::vconf"/>
 			<label name="telephony_framework::properties"/>
 		</provide>
 		<request>
@@ -38,15 +37,25 @@
 			<smack request="telephony_framework::api_ps_profile" type="rwx"/>
 			<smack request="telephony_framework::api_ps_private" type="rwx"/>
 			<smack request="telephony_framework::api_private" type="rwx"/>
-			<smack request="telephony_framework::vconf" type="rwx"/>
 			<smack request="telephony_framework::properties" type="rwx"/>
 			<smack request="dbus" type="rwx"/>
 			<smack request="system::use_internet" type="rwx"/>
 			<smack request="secure-storage::telephony_sim" type="rw"/>
 			<smack request="security-server::api-privilege-by-pid" type="w"/>
 			<smack request="deviced::display" type="rw"/>
-			<smack request="system::vconf" type="rwxat"/>
-			<smack request="system::vconf_system" type="rwxat"/>
+			<smack request="alarm-server::alarm" type="rw"/>
+			<smack request="device::sys_logging" type="rw"/>
+			<smack request="device::app_logging" type="rw"/>
+			<smack request="deviced" type="rwx"/>
+			<smack request="pkgmgr::db" type="r"/>
+			<smack request="tizen::vconf::network" type="rw"/>
+			<smack request="tizen::vconf::setting::admin" type="rw"/>
+			<smack request="tizen::vconf::telephony::admin" type="rw"/>
+			<smack request="tizen::vconf::public::r" type="rw"/>
+			<smack request="tizen::vconf::platform::r" type="rw"/>
+			<smack request="tizen::vconf::platform::rw" type="rw"/>
+			<smack request="tizen::vconf::display" type="rl"/>
+			<smack request="tizen::vconf::public::r::platform::rw" type="rw"/>
 		</request>
 		<permit>
 			<smack permit="dbus" type="rwx"/>
