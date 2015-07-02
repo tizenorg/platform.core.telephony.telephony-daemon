@@ -1,6 +1,6 @@
 %define major 1
 %define minor 3
-%define patchlevel 33
+%define patchlevel 34
 
 Name:           telephony-daemon
 Version:        %{major}.%{minor}.%{patchlevel}

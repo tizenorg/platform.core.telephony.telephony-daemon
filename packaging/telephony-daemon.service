@@ -5,7 +5,6 @@ After=secure-storage.service
 [Service]
 User=system
 Group=system
-SmackProcessLabel=telephony_framework
 ExecStart=/usr/bin/telephony-daemon
 Restart=always
 RestartSec=0
