@@ -4,6 +4,7 @@ PROJECT(telephony-daemon C)
 SET(PREFIX ${CMAKE_INSTALL_PREFIX})
 SET(EXEC_PREFIX "\${prefix}")
 SET(LIBDIR ${LIB_INSTALL_DIR})
+SET(UNITDIR ${UNIT_INSTALL_DIR})
 SET(INCLUDEDIR "\${prefix}/include")
 
 # Set required packages
@@ -53,4 +54,4 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${pkgs_LDFLAGS} "-ldl")
 # install
 INSTALL(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/LICENSE DESTINATION /usr/share/license RENAME telephony-daemon)
-INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/packaging/telephony-daemon.service DESTINATION ${LIBDIR}/systemd/system)
+INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/packaging/telephony-daemon.service DESTINATION ${UNITDIR})

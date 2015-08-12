@@ -3,8 +3,6 @@ Description=Telephony daemon
 After=secure-storage.service
 
 [Service]
-User=system
-Group=system
 ExecStart=/usr/bin/telephony-daemon
 Restart=always
 RestartSec=0

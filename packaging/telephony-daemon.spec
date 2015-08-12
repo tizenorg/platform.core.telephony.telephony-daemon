@@ -1,6 +1,6 @@
 %define major 1
 %define minor 3
-%define patchlevel 34
+%define patchlevel 35
 
 Name:           telephony-daemon
 Version:        %{major}.%{minor}.%{patchlevel}
@@ -24,6 +24,7 @@ Description: Telephony Daemon
 %build
 cmake . -DCMAKE_INSTALL_PREFIX=%{_prefix} \
 	-DLIB_INSTALL_DIR=%{_libdir} \
+	-DUNIT_INSTALL_DIR=%{_unitdir} \
 	-DVERSION=%{version} \
 	-DTIZEN_DEBUG_ENABLE=1 \
 
@@ -32,8 +33,8 @@ make %{?_smp_mflags}
 %install
 
 %make_install
-mkdir -p %{buildroot}%{_libdir}/systemd/system/multi-user.target.wants
-ln -s %{_libdir}/systemd/system/telephony-daemon.service %{buildroot}%{_libdir}/systemd/system/multi-user.target.wants/telephony-daemon.service
+mkdir -p %{buildroot}%{_unitdir}/multi-user.target.wants
+ln -s %{_unitdir}/telephony-daemon.service %{buildroot}%{_unitdir}/multi-user.target.wants/telephony-daemon.service
 
 %post -p /sbin/ldconfig
 
@@ -41,6 +42,6 @@ ln -s %{_libdir}/systemd/system/telephony-daemon.service %{buildroot}%{_libdir}/
 %manifest telephony-daemon.manifest
 %defattr(644,system,system,-)
 %caps(cap_mac_override,cap_dac_override,cap_net_admin=eip) %attr(755,system,system) %{_bindir}/telephony-daemon
-%{_libdir}/systemd/system/telephony-daemon.service
-%{_libdir}/systemd/system/multi-user.target.wants/telephony-daemon.service
+%{_unitdir}/telephony-daemon.service
+%{_unitdir}/multi-user.target.wants/telephony-daemon.service
 %{_datadir}/license/telephony-daemon
