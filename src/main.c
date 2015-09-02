@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <signal.h>
 #include <dlfcn.h>
 #include <getopt.h>
 #include <sys/stat.h>
@@ -65,6 +65,10 @@ void tcore_log(enum tcore_log_type type, enum tcore_log_priority priority, const
 {
 	va_list ap;
 	char buf[BUFFER_SIZE];
+	int log_id = LOG_ID_RADIO;
+#ifdef TIZEN_PROFILE_TV
+	log_id = LOG_ID_MAIN;
+#endif
 
 	switch (type) {
 	case TCORE_LOG_TYPE_RADIO: {
@@ -72,13 +76,13 @@ void tcore_log(enum tcore_log_type type, enum tcore_log_priority priority, const
 			va_start(ap, fmt);
 			vsnprintf(buf, BUFFER_SIZE-1, fmt, ap);
 			va_end(ap);
-			__dlog_print(LOG_ID_RADIO, priority, tag, buf);
+			__dlog_print(log_id, priority, tag, buf);
 		} else {
 		#ifdef TIZEN_DEBUG_ENABLE
 			va_start(ap, fmt);
 			vsnprintf(buf, BUFFER_SIZE-1, fmt, ap);
 			va_end(ap);
-			__dlog_print(LOG_ID_RADIO, priority, tag, buf);
+			__dlog_print(log_id, priority, tag, buf);
 		#endif
 		}
 	} break;
@@ -88,18 +92,22 @@ void tcore_log(enum tcore_log_type type, enum tcore_log_priority priority, const
 		float a = 0.00, b = 0.00;
 		int next = 0;
 		FILE *fp = fopen("/proc/uptime", "r");
-		g_return_if_fail(NULL != fp);
-
-		if (fscanf(fp, "%f %f", &a, &b)) ;
+		if (NULL == fp) {
+			err("fopen() failed");
+			return;
+		}
+		if (fscanf(fp, "%f %f", &a, &b) != 1)
+			next = snprintf(buf, BUFFER_SIZE, "[UPTIME] [Not Set] ");
+		else
+			next = snprintf(buf, BUFFER_SIZE, "[UPTIME] %f ", a);
 		fclose(fp);
-		next = snprintf(buf, BUFFER_SIZE, "[UPTIME] %f ", a);
 		if (next < 0)
 			return;
 
 		va_start(ap, fmt);
 		vsnprintf(buf + next, (BUFFER_SIZE-1) - next, fmt, ap);
 		va_end(ap);
-		__dlog_print(LOG_ID_RADIO, priority, tag, buf);
+		__dlog_print(log_id, priority, tag, buf);
 	#endif
 	} break;
 
@@ -166,7 +174,11 @@ static void __log_uptime()
 {
 	float a = 0.00, b = 0.00;
 	FILE *fp = fopen("/proc/uptime", "r");
-	g_return_if_fail(NULL != fp);
+
+	if (NULL == fp) {
+		err("fopen() failed");
+		return;
+	}
 	info("scanned %d items", fscanf(fp, "%f %f", &a, &b));
 	info("proc uptime = %f idletime = %f\n", a, b);
 	fclose(fp);
@@ -214,14 +226,14 @@ static void *__load_plugin(const gchar *filename, struct tcore_plugin_define_des
 	char file_date[27];
 
 	handle = dlopen(filename, RTLD_LAZY);
-	if (G_UNLIKELY(NULL == handle)) {
-		err("fail to load '%s': %s", filename, dlerror());
+	if (NULL == handle) {
+		err("dlopen() failed:[%s]", filename);
 		return NULL;
 	}
 
 	desc = dlsym(handle, "plugin_define_desc");
-	if (G_UNLIKELY(NULL == desc)) {
-		err("fail to load symbol: %s", dlerror());
+	if (NULL == desc) {
+		err("dlsym() failed:[%s]", "plugin_define_desc");
 		dlclose(handle);
 		return NULL;
 	}
@@ -279,7 +291,8 @@ static gboolean load_plugins(Server *s, const char *path, gboolean flag_test_loa
 		filename = g_build_filename(path, file, NULL);
 
 		/* Load a plugin */
-		if (G_UNLIKELY((handle = __load_plugin(filename, &desc)) == NULL)) {
+		handle = __load_plugin(filename, &desc);
+		if (NULL == handle) {
 			g_free(filename);
 			continue;
 		}
@@ -365,6 +378,9 @@ int main(int argc, char *argv[])
 	if (sigaction(SIGHUP, &sigact, NULL) < 0)
 		warn("sigaction(SIGHUP) failed.");
 #endif
+
+	if (signal(SIGCHLD, SIG_IGN) == SIG_ERR)
+		err("Child process won't be auto reaped: [%d]", errno);
 
 	/* Commandline option parser TODO: Replace with GOptionContext */
 	while (TRUE) {
