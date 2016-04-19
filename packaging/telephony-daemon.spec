@@ -1,6 +1,6 @@
 %define major 1
 %define minor 3
-%define patchlevel 37
+%define patchlevel 38
 
 Name:           telephony-daemon
 Version:        %{major}.%{minor}.%{patchlevel}
@@ -9,6 +9,7 @@ License:        Apache-2.0
 Summary:        Telephony Daemon
 Group:          System/Telephony
 Source0:        %{name}-%{version}.tar.gz
+Requires:       security-config
 BuildRequires:  cmake
 BuildRequires:  pkgconfig(dlog)
 BuildRequires:  pkgconfig(glib-2.0)
