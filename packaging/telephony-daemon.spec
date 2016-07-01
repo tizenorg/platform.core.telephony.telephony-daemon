@@ -1,6 +1,6 @@
 %define major 1
 %define minor 3
-%define patchlevel 39
+%define patchlevel 40
 
 Name:           telephony-daemon
 Version:        %{major}.%{minor}.%{patchlevel}
@@ -47,7 +47,7 @@ ln -s %{_unitdir}/telephony-daemon.service %{buildroot}%{_unitdir}/multi-user.ta
 %files
 %manifest telephony-daemon.manifest
 %defattr(644,root,root,-)
-%caps(cap_mac_override,cap_dac_override,cap_net_admin=eip) %attr(755,root,root) %{_bindir}/telephony-daemon
+%caps(cap_net_admin=eip) %attr(755,root,root) %{_bindir}/telephony-daemon
 %{_unitdir}/telephony-daemon.service
 %if "%{?tizen_profile_name}" != "tv"
 %{_unitdir}/multi-user.target.wants/telephony-daemon.service
